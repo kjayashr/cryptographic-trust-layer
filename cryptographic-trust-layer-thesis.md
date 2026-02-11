@@ -8,9 +8,9 @@
 
 **The Problem in Plain English:**
 
-Today's AI isn't just answering questions — it's *taking actions*. AI agents can send emails, move money, change infrastructure settings, and coordinate with other AI agents, all on their own, faster than any human could review.
+Today's AI takes actions. AI agents send emails, move money, change infrastructure settings, and coordinate with other AI agents, autonomously, faster than any human could review.
 
-But here's the problem: there's no way to **prove** who authorized an AI to do something, what rules it was following, or whether those rules were tampered with. It's like having employees who can sign any contract, access any account, and make any purchase — with no receipts, no signatures, and no audit trail.
+But here's the problem: there's no way to **prove** who authorized an AI to do something, what rules it was following, or whether those rules were tampered with. It's like having employees who can sign any contract, access any account, and make any purchase, with no receipts, no signatures, and no audit trail.
 
 Current AI security tools (guardrails, prompt filters, logging) are like putting a suggestion box at the door of a bank vault. They *ask* AI to behave. They don't *enforce* it.
 
@@ -18,9 +18,9 @@ Current AI security tools (guardrails, prompt filters, logging) are like putting
 
 A security layer that works like a **digital notary for every AI action**. Before any AI agent can do anything consequential, it must:
 
-1. **Prove its identity** — like showing a badge before entering a secure building
-2. **Get its action approved against policy** — like getting a manager's signature before spending company money
-3. **Receive a cryptographic receipt** — a tamper-proof, timestamped record that can never be altered or forged
+1. **Prove its identity**: like showing a badge before entering a secure building
+2. **Get its action approved against policy**: like getting a manager's signature before spending company money
+3. **Receive a cryptographic receipt**: a tamper-proof, timestamped record that can never be altered or forged
 
 If the AI can't produce this signed receipt, the action simply doesn't execute. Not "flagged for review." Not "logged for later." **Blocked.**
 
@@ -42,9 +42,9 @@ Think of how credit card transactions work today:
 - Your card has an **identity** (card number, chip, issuing bank)
 - Each purchase is **authorized in real-time** (Is this card valid? Is there enough credit? Is this purchase suspicious?)
 - Every transaction produces a **signed, timestamped record** that both the bank and merchant can independently verify
-- If the card is stolen, it can be **revoked instantly** — all future transactions are blocked
+- If the card is stolen, it can be **revoked instantly**, and all future transactions are blocked
 
-We're building the exact same thing — but for AI agent actions instead of credit card purchases. Every AI action gets an identity check, a policy check, a cryptographic receipt, and the ability to be revoked in real-time.
+We're building the exact same thing, but for AI agent actions instead of credit card purchases. Every AI action gets an identity check, a policy check, a cryptographic receipt, and the ability to be revoked in real-time.
 
 **Three guarantees this provides:**
 
@@ -52,40 +52,7 @@ We're building the exact same thing — but for AI agent actions instead of cred
 |---|---|---|
 | **Verifiable** | Anyone can independently check if an AI action was properly authorized | No more "trust us, the AI was supposed to do that" |
 | **Tamper-proof** | The record of what happened cannot be altered after the fact | Regulators, auditors, and incident responders get evidence, not just logs |
-| **Enforceable** | Without cryptographic authorization, the action physically cannot execute | It's not a guardrail or a suggestion — it's a locked gate |
-
----
-
-## 1. The Shift That Breaks the Current Stack
-
-Traditional AI returns text. A human reviews it and acts. The blast radius of a compromised model is limited to bad advice.
-
-Agentic AI executes. It calls APIs, modifies infrastructure, moves money, and interacts with other agents - autonomously, at machine speed, across trust boundaries.
-
-```mermaid
-graph LR
-    subgraph "Pre-2024: Human-in-the-Loop"
-        A[Prompt] --> B[Inference] --> C[Text] --> D[Human Acts]
-    end
-
-    subgraph "2024+: Autonomous Execution"
-        E[Goal] --> F[Agent Reasoning]
-        F --> G[API Calls]
-        F --> H[Infra Mutations]
-        F --> I[Financial Transactions]
-        F --> J[Cross-Org Agent Calls]
-    end
-
-    style D fill:#2d6a4f,color:#fff
-    style G fill:#9d0208,color:#fff
-    style H fill:#9d0208,color:#fff
-    style I fill:#9d0208,color:#fff
-    style J fill:#9d0208,color:#fff
-```
-
-A compromised agent in this model has the same impact profile as a compromised privileged service account - lateral movement, privilege escalation, data exfiltration - except it operates with less observability and no established identity framework.
-
-The current stack (guardrails, prompt filtering, output scanning, logging) was designed to monitor AI. It was not designed to **enforce and prove** what AI is allowed to do.
+| **Enforceable** | Without cryptographic authorization, the action physically cannot execute | A locked gate, not a guardrail or a suggestion |
 
 ---
 
