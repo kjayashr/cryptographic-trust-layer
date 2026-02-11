@@ -553,37 +553,7 @@ The transparency log model is borrowed from Certificate Transparency (RFC 6962).
 
 Scenario: SOC detects an unauthorized $200k wire transfer initiated by an AI agent.
 
-```mermaid
-sequenceDiagram
-    participant SOC as SOC Analyst
-    participant XSIAM as SIEM / XDR
-    participant TL as Trust Layer API
-    participant AUDIT as Immutable Store
-    participant XSOAR as SOAR Platform
-
-    Note over SOC,XSOAR: T+0: Alert fires - anomalous financial action
-
-    SOC->>XSIAM: Triage alert: agent-finance-prod-03, $200k transfer
-    XSIAM->>TL: Query: SAE chain for transaction ID TXN-4829
-    TL->>AUDIT: Retrieve Merkle proof + full SAE chain
-    AUDIT-->>TL: 6 SAEs in causal chain + Merkle inclusion proofs
-    TL-->>XSIAM: Enriched forensic timeline
-
-    Note over SOC,XSOAR: T+2min: SOC has cryptographic answers
-
-    SOC->>SOC: Agent identity: CN=agent-finance-prod-03 (cert valid at time)
-    SOC->>SOC: Model: SHA-256 a3f8c2... (matches approved provenance)
-    SOC->>SOC: Policy: v2.7.1 hash b91d0e... (MISMATCH - policy was altered)
-    SOC->>SOC: Root cause: policy drift at T-3h allowed $200k without dual auth
-
-    Note over SOC,XSOAR: T+3min: Automated containment
-
-    SOC->>XSOAR: Trigger playbook: compromised-policy-response
-    XSOAR->>TL: Revoke agent-finance-prod-03 certificate
-    XSOAR->>TL: Roll back policy to last signed good version (v2.7.0)
-    XSOAR->>TL: Quarantine all agents evaluating policy v2.7.1
-    TL-->>XSOAR: Confirmation: 3 agents quarantined, certs revoked
-```
+![Incident Response: Forensic Workflow](network-security.png)
 
 Without the trust layer: the SOC reconstructs this from scattered, mutable logs across 4+ systems. It takes days. The evidence is legally contestable. With the trust layer: cryptographic proof in minutes, including the exact policy version that was tampered with.
 
