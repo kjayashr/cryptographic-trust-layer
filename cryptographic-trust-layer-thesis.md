@@ -4,6 +4,58 @@
 
 ---
 
+## The Big Picture (10,000ft View)
+
+**The Problem in Plain English:**
+
+Today's AI isn't just answering questions — it's *taking actions*. AI agents can send emails, move money, change infrastructure settings, and coordinate with other AI agents, all on their own, faster than any human could review.
+
+But here's the problem: there's no way to **prove** who authorized an AI to do something, what rules it was following, or whether those rules were tampered with. It's like having employees who can sign any contract, access any account, and make any purchase — with no receipts, no signatures, and no audit trail.
+
+Current AI security tools (guardrails, prompt filters, logging) are like putting a suggestion box at the door of a bank vault. They *ask* AI to behave. They don't *enforce* it.
+
+**What We're Building:**
+
+A security layer that works like a **digital notary for every AI action**. Before any AI agent can do anything consequential, it must:
+
+1. **Prove its identity** — like showing a badge before entering a secure building
+2. **Get its action approved against policy** — like getting a manager's signature before spending company money
+3. **Receive a cryptographic receipt** — a tamper-proof, timestamped record that can never be altered or forged
+
+If the AI can't produce this signed receipt, the action simply doesn't execute. Not "flagged for review." Not "logged for later." **Blocked.**
+
+```mermaid
+graph LR
+    A["AI Agent<br/>wants to do something"] --> B["Trust Layer<br/>checks identity + policy"]
+    B -->|"Approved"| C["Signed Receipt<br/>cryptographic proof"]
+    C --> D["Action Executes<br/>with verifiable proof"]
+    B -->|"Denied"| E["Action Blocked<br/>denial on record"]
+
+    style B fill:#e76f51,color:#fff
+    style C fill:#2a9d8f,color:#fff
+    style E fill:#9d0208,color:#fff
+```
+
+**A Simple Analogy:**
+
+Think of how credit card transactions work today:
+- Your card has an **identity** (card number, chip, issuing bank)
+- Each purchase is **authorized in real-time** (Is this card valid? Is there enough credit? Is this purchase suspicious?)
+- Every transaction produces a **signed, timestamped record** that both the bank and merchant can independently verify
+- If the card is stolen, it can be **revoked instantly** — all future transactions are blocked
+
+We're building the exact same thing — but for AI agent actions instead of credit card purchases. Every AI action gets an identity check, a policy check, a cryptographic receipt, and the ability to be revoked in real-time.
+
+**Three guarantees this provides:**
+
+| Guarantee | What it means | Why it matters |
+|---|---|---|
+| **Verifiable** | Anyone can independently check if an AI action was properly authorized | No more "trust us, the AI was supposed to do that" |
+| **Tamper-proof** | The record of what happened cannot be altered after the fact | Regulators, auditors, and incident responders get evidence, not just logs |
+| **Enforceable** | Without cryptographic authorization, the action physically cannot execute | It's not a guardrail or a suggestion — it's a locked gate |
+
+---
+
 ## 1. The Shift That Breaks the Current Stack
 
 Traditional AI returns text. A human reviews it and acts. The blast radius of a compromised model is limited to bad advice.
@@ -45,12 +97,12 @@ Six attack vectors specific to agentic AI systems, mapped against what existing 
 graph TB
     subgraph "AI Agent Attack Chain"
         direction TB
-        T1["T1 - Model Supply Chain\nPoisoned weights · backdoored LoRA adapters\ntyposquatted model repos · compromised\ntraining data · dependency confusion"]
-        T2["T2 - Input Manipulation\nDirect prompt injection · indirect injection\nvia RAG context · jailbreaks · instruction\nhierarchy bypass · context poisoning"]
-        T3["T3 - Identity & Authorization\nAgent impersonation · credential theft\nover-provisioned service accounts\nprivilege escalation via tool chaining"]
-        T4["T4 - Action Execution\nUnauthorized API calls · parameter tampering\nreplay attacks · TOCTOU between policy\nevaluation and execution"]
-        T5["T5 - Observability\nLog tampering · silent policy drift\nphantom actions · broken causal chains\nacross multi-agent workflows"]
-        T6["T6 - Cross-Boundary\nRogue agent-to-agent traffic · unverified\ninter-org interactions · MITM on agent\ncommunication · trust delegation abuse"]
+        T1["T1 - Model Supply Chain<br/>Poisoned weights, backdoored adapters,<br/>typosquatted repos, training data attacks"]
+        T2["T2 - Input Manipulation<br/>Prompt injection, RAG poisoning,<br/>jailbreaks, context manipulation"]
+        T3["T3 - Identity and Authorization<br/>Agent impersonation, credential theft,<br/>privilege escalation via tool chaining"]
+        T4["T4 - Action Execution<br/>Unauthorized API calls, replay attacks,<br/>TOCTOU between policy and execution"]
+        T5["T5 - Observability<br/>Log tampering, silent policy drift,<br/>broken causal chains across workflows"]
+        T6["T6 - Cross-Boundary<br/>Rogue agent-to-agent traffic,<br/>unverified inter-org interactions"]
     end
 
     T1 --> T2 --> T3 --> T4 --> T5 --> T6
@@ -81,26 +133,26 @@ The trust layer closes T1, T3, T4, T5, and T6. It hardens the boundary at T2 by 
 ```mermaid
 graph TB
     subgraph "AI Agent Runtime"
-        A["Agent\n(reasoning engine)"] -->|"Proposes action\n(untrusted intent)"| B["Structured\nAction Request"]
+        A["Agent<br/>(reasoning engine)"] -->|"Proposes action<br/>(untrusted intent)"| B["Structured<br/>Action Request"]
     end
 
     subgraph "Cryptographic Trust Layer"
-        B --> PDP{"Policy Decision\nPoint (PDP)"}
-        PDP -->|"Evaluate"| PE["Policy Engine\n(OPA/Rego · Cedar)"]
-        PE -->|ALLOW| CS["Signing Service\n(Ed25519 · ES256)"]
-        PE -->|DENY| DR["Signed Denial\nRecord"]
-        CS --> SAE["Signed Action\nEnvelope (SAE)"]
+        B --> PDP{"Policy Decision<br/>Point (PDP)"}
+        PDP -->|"Evaluate"| PE["Policy Engine<br/>(OPA/Rego · Cedar)"]
+        PE -->|ALLOW| CS["Signing Service<br/>(Ed25519 · ES256)"]
+        PE -->|DENY| DR["Signed Denial<br/>Record"]
+        CS --> SAE["Signed Action<br/>Envelope (SAE)"]
     end
 
     subgraph "Execution Boundary"
-        SAE -->|"Signature verified\nbefore execution"| PEP["Policy Enforcement\nPoint (PEP)"]
-        PEP --> TGT["Target System\n(API · Service · Infra)"]
+        SAE -->|"Signature verified<br/>before execution"| PEP["Policy Enforcement<br/>Point (PEP)"]
+        PEP --> TGT["Target System<br/>(API · Service · Infra)"]
     end
 
     subgraph "Audit Plane"
-        CS --> MA["Merkle\nAnchoring"]
+        CS --> MA["Merkle<br/>Anchoring"]
         DR --> MA
-        MA --> IAS["Immutable Audit Store\n(append-only · hash-chained)"]
+        MA --> IAS["Immutable Audit Store<br/>(append-only · hash-chained)"]
     end
 
     style PDP fill:#e76f51,color:#fff
@@ -122,14 +174,14 @@ Three deployment models depending on where the enterprise is in its agent maturi
 graph TB
     subgraph "Model A - Sidecar (Per-Agent Enforcement)"
         direction LR
-        A1["Agent Process"] --> A2["Trust Sidecar\n(PDP + PEP)"]
+        A1["Agent Process"] --> A2["Trust Sidecar<br/>(PDP + PEP)"]
         A2 --> A3["Target API"]
         A2 --> A4["Audit Plane"]
     end
 
     subgraph "Model B - Gateway (Centralized Choke Point)"
         direction LR
-        B1["Agent 1"] --> B4["Trust Gateway\n(reverse proxy mode)"]
+        B1["Agent 1"] --> B4["Trust Gateway<br/>(reverse proxy)"]
         B2["Agent 2"] --> B4
         B3["Agent 3"] --> B4
         B4 --> B5["Target APIs"]
@@ -138,8 +190,8 @@ graph TB
 
     subgraph "Model C - SDK (Embedded in Agent Framework)"
         direction LR
-        C1["Agent Framework\n(LangChain · CrewAI · AutoGen)"] --> C2["Trust SDK\n(library calls)"]
-        C2 --> C3["Remote Signing Service\n(keys never local)"]
+        C1["Agent Framework<br/>(LangChain · CrewAI)"] --> C2["Trust SDK<br/>(library calls)"]
+        C2 --> C3["Remote Signing Service<br/>(keys never local)"]
         C3 --> C4["Target APIs"]
         C2 --> C5["Audit Plane"]
     end
@@ -167,18 +219,18 @@ The first question any security architect asks: *who holds the keys, how are the
 ```mermaid
 graph TB
     subgraph "Certificate Hierarchy"
-        ROOT["Root CA\n(offline · HSM-backed · air-gapped)\nLifetime: 10 years\nUsage: Signs intermediate CAs only"]
-        INT["Intermediate CA - Agent Identity\n(online · HSM-backed · FIPS 140-2 L3)\nLifetime: 2 years\nUsage: Issues agent certificates"]
-        INT2["Intermediate CA - Policy Signing\n(online · HSM-backed)\nLifetime: 2 years\nUsage: Signs policy artifacts"]
-        INT3["Intermediate CA - Audit Anchoring\n(online · HSM-backed)\nLifetime: 2 years\nUsage: Signs Merkle roots"]
+        ROOT["Root CA<br/>Offline · HSM-backed · Air-gapped<br/>Lifetime: 10 years"]
+        INT["Intermediate CA - Agent Identity<br/>Online · HSM · FIPS 140-2 L3<br/>Lifetime: 2 years"]
+        INT2["Intermediate CA - Policy Signing<br/>Online · HSM-backed<br/>Lifetime: 2 years"]
+        INT3["Intermediate CA - Audit Anchoring<br/>Online · HSM-backed<br/>Lifetime: 2 years"]
 
         ROOT --> INT
         ROOT --> INT2
         ROOT --> INT3
 
-        AGENT1["Agent Cert\nSubject: agent-procurement-prod-01\nLifetime: 24h (auto-rotated)\nKey: Ed25519\nExtensions: allowed-actions,\nmax-risk-score, org-boundary"]
-        AGENT2["Agent Cert\nSubject: agent-finance-prod-03\nLifetime: 24h (auto-rotated)\nKey: Ed25519"]
-        POLICY["Policy Signing Cert\nSigns OPA/Rego bundles\nLifetime: 90 days"]
+        AGENT1["Agent Cert<br/>agent-procurement-prod-01<br/>24h lifetime · Ed25519 · auto-rotated"]
+        AGENT2["Agent Cert<br/>agent-finance-prod-03<br/>24h lifetime · Ed25519"]
+        POLICY["Policy Signing Cert<br/>Signs OPA/Rego bundles<br/>90-day lifetime"]
 
         INT --> AGENT1
         INT --> AGENT2
@@ -186,16 +238,16 @@ graph TB
     end
 
     subgraph "Key Storage"
-        HSM["HSM / Cloud KMS\n(AWS KMS · Azure Key Vault\n· GCP Cloud HSM)\nRoot + intermediate private keys\nFIPS 140-2 Level 3"]
-        AGENT_STORE["Ephemeral Key Store\nAgent signing keys\nIn-memory only · never persisted\nProvisioned via SPIFFE/SPIRE"]
+        HSM["HSM / Cloud KMS<br/>AWS KMS · Azure Key Vault<br/>GCP Cloud HSM · FIPS 140-2 L3"]
+        AGENT_STORE["Ephemeral Key Store<br/>In-memory only · never persisted<br/>Provisioned via SPIFFE/SPIRE"]
     end
 
     INT --> HSM
     AGENT1 --> AGENT_STORE
 
     subgraph "Revocation"
-        OCSP["OCSP Responder\n(stapled to every SAE)\nReal-time revocation check"]
-        CRL["CRL Distribution Point\nFallback for offline verification\nDelta CRLs every 5 minutes"]
+        OCSP["OCSP Responder<br/>Stapled to every SAE<br/>Real-time revocation check"]
+        CRL["CRL Distribution Point<br/>Delta CRLs every 5 minutes"]
     end
 
     INT --> OCSP
@@ -222,22 +274,22 @@ Key design decisions:
 ```mermaid
 graph LR
     subgraph "Control Plane (low frequency, high trust)"
-        CP1["Policy Management\nVersion, sign, distribute\nOPA/Rego bundles"]
-        CP2["Certificate Lifecycle\nIssue, rotate, revoke\nagent certificates"]
-        CP3["Model Registry\nRegister, attest, revoke\nmodel provenance"]
-        CP4["Audit Configuration\nAnchoring frequency,\nretention policy,\ntransparency log config"]
+        CP1["Policy Management<br/>Version, sign, distribute<br/>OPA/Rego bundles"]
+        CP2["Certificate Lifecycle<br/>Issue, rotate, revoke<br/>agent certificates"]
+        CP3["Model Registry<br/>Register, attest, revoke<br/>model provenance"]
+        CP4["Audit Configuration<br/>Anchoring frequency,<br/>retention, transparency log"]
     end
 
     subgraph "Data Plane (high frequency, low latency)"
-        DP1["Policy Evaluation\nPer-action PDP calls\nTarget: <5ms p99"]
-        DP2["Action Signing\nEd25519 signature\nper authorized action\nTarget: <2ms"]
-        DP3["Signature Verification\nAt execution boundary\n(PEP)\nTarget: <1ms"]
-        DP4["Audit Event Emission\nAsync append to\nimmutable store\nTarget: non-blocking"]
+        DP1["Policy Evaluation<br/>Per-action PDP calls<br/>Target: p99 under 5ms"]
+        DP2["Action Signing<br/>Ed25519 per action<br/>Target: under 2ms"]
+        DP3["Signature Verification<br/>At PEP boundary<br/>Target: under 1ms"]
+        DP4["Audit Event Emission<br/>Async append to store<br/>Target: non-blocking"]
     end
 
-    CP1 -.->|"Signed policy\nbundle push"| DP1
-    CP2 -.->|"Cert provisioning\nvia SPIFFE"| DP2
-    CP3 -.->|"Provenance\ncert distribution"| DP1
+    CP1 -.->|"Signed policy<br/>bundle push"| DP1
+    CP2 -.->|"Cert provisioning<br/>via SPIFFE"| DP2
+    CP3 -.->|"Provenance<br/>cert distribution"| DP1
 
     style CP1 fill:#264653,color:#fff
     style CP2 fill:#264653,color:#fff
@@ -273,21 +325,21 @@ The atomic unit of trust. A JWS-format object that cryptographically binds ident
 graph TB
     subgraph "SAE Structure (JWS Compact Serialization)"
         direction TB
-        HEADER["JOSE Header\nalg: EdDSA (Ed25519) | ES256\nkid: SHA-256 fingerprint of signing cert\ntyp: application/sae+jwt\nx5c: certificate chain (optional)"]
+        HEADER["JOSE Header<br/>alg: EdDSA or ES256<br/>kid: SHA-256 fingerprint<br/>typ: application/sae+jwt"]
 
         subgraph "Payload Claims"
             direction TB
-            C1["iss - Issuer\nAgent X.509 Subject DN\ne.g. CN=agent-procurement-prod-01,\nOU=finance,O=acme-corp"]
-            C2["sub - Subject (target)\nAPI endpoint or service identifier\ne.g. api.vendor.com/v2/orders"]
-            C3["act - Action descriptor\nStructured intent: method, params,\nclassification (PII/financial/infra)"]
-            C4["pol - Policy binding\nSHA-256 of OPA bundle evaluated\n+ policy version + decision ID"]
-            C5["mod - Model provenance\nSHA-256 of model artifact\n+ SBOM reference + SLSA level"]
-            C6["iat / exp / nbf - Temporal\nIssued-at, expiry (short: 30-300s),\nnot-before (prevents pre-dating)"]
-            C7["jti - Unique ID (nonce)\nPrevents replay attacks\nIdempotency key for execution"]
-            C8["ctx - Execution context\nSession ID, parent SAE chain hash,\nrisk score, data classification level"]
+            C1["iss - Issuer<br/>Agent X.509 Subject DN"]
+            C2["sub - Subject<br/>Target API endpoint or service"]
+            C3["act - Action descriptor<br/>Method, params, classification"]
+            C4["pol - Policy binding<br/>SHA-256 of evaluated OPA bundle"]
+            C5["mod - Model provenance<br/>SHA-256 of model artifact + SBOM ref"]
+            C6["iat / exp / nbf - Temporal<br/>Issued-at, expiry (30-300s), not-before"]
+            C7["jti - Unique ID<br/>Nonce for replay prevention"]
+            C8["ctx - Execution context<br/>Session ID, parent SAE chain hash,<br/>risk score, data classification"]
         end
 
-        SIG["Signature\nEd25519 over BASE64URL(header).BASE64URL(payload)\nVerifiable by any party holding the public key"]
+        SIG["Signature<br/>Ed25519 over header.payload<br/>Verifiable by any party with public key"]
     end
 
     HEADER --> C1
@@ -327,29 +379,29 @@ sequenceDiagram
     participant ERP as ERP System
 
     U->>A1: "Order 500 units of part X from Vendor Y"
-    A1->>TL: Propose: classify request (SAE₀ - root)
-    TL->>TL: Evaluate policy → ALLOW → sign SAE₁
-    TL->>A1: SAE₁ (parent: root)
+    A1->>TL: Propose: classify request (root)
+    TL->>TL: Evaluate policy, ALLOW, sign SAE1
+    TL->>A1: SAE1 (parent: root)
 
     A1->>A2: Forward: check budget
-    A2->>TL: Propose: query budget API (parent: SAE₁)
-    TL->>TL: Evaluate → ALLOW → sign SAE₂
-    TL->>A2: SAE₂ (parent: SAE₁)
+    A2->>TL: Propose: query budget API (parent: SAE1)
+    TL->>TL: Evaluate, ALLOW, sign SAE2
+    TL->>A2: SAE2 (parent: SAE1)
 
     A2->>A3: Forward: budget approved, route for sign-off
-    A3->>TL: Propose: request human approval (parent: SAE₂)
-    TL->>TL: Evaluate → ALLOW (requires human for >$10k) → sign SAE₃
-    TL->>A3: SAE₃ (parent: SAE₂, pending: human_approval)
+    A3->>TL: Propose: request human approval (parent: SAE2)
+    TL->>TL: Evaluate, ALLOW (requires human for > $10k), sign SAE3
+    TL->>A3: SAE3 (parent: SAE2, pending: human_approval)
 
     Note over A3,TL: Human approver signs off (out of band)
 
     A3->>A4: Forward: approved, generate PO
-    A4->>TL: Propose: create PO in ERP (parent: SAE₃ + human sig)
-    TL->>TL: Evaluate → ALLOW (human approval verified) → sign SAE₄
-    TL->>A4: SAE₄ (parent: SAE₃)
-    A4->>ERP: Execute PO creation with SAE₄
+    A4->>TL: Propose: create PO in ERP (parent: SAE3 + human sig)
+    TL->>TL: Evaluate, ALLOW (human approval verified), sign SAE4
+    TL->>A4: SAE4 (parent: SAE3)
+    A4->>ERP: Execute PO creation with SAE4
 
-    Note over U,ERP: Full chain: SAE₁ → SAE₂ → SAE₃ → SAE₄
+    Note over U,ERP: Full chain: SAE1 -> SAE2 -> SAE3 -> SAE4
     Note over U,ERP: Any SAE can be independently verified
     Note over U,ERP: Causal DAG is reconstructable from parent hashes
 ```
@@ -364,29 +416,29 @@ Mapping trust layer controls against an AI-specific attack lifecycle.
 
 ```mermaid
 graph TB
-    subgraph "AI Agent Kill Chain → Trust Layer Coverage"
+    subgraph "AI Agent Kill Chain with Trust Layer Coverage"
         direction TB
 
-        KC1["1. RECONNAISSANCE\nMap agent capabilities,\ntool access, permission scope"]
-        M1["Agent capability obfuscation\nMinimal tool surface exposure"]
+        KC1["1. RECONNAISSANCE<br/>Map agent capabilities and scope"]
+        M1["Mitigation: Capability obfuscation,<br/>minimal tool surface exposure"]
 
-        KC2["2. SUPPLY CHAIN\nPoisoned weights, malicious adapters,\nbackdoored dependencies"]
-        M2["Model provenance (AI-SBOM)\nSLSA attestation\nRuntime hash verification\nSCA for model dependencies"]
+        KC2["2. SUPPLY CHAIN<br/>Poisoned weights, malicious adapters"]
+        M2["Mitigation: Model provenance via AI-SBOM,<br/>SLSA attestation, runtime hash verification"]
 
-        KC3["3. INITIAL ACCESS\nPrompt injection, RAG poisoning,\njailbreak, context manipulation"]
-        M3["Guardrails handle input filtering.\nTrust layer ensures: even if injection\nsucceeds, execution requires signed\nauthorization the agent cannot forge"]
+        KC3["3. INITIAL ACCESS<br/>Prompt injection, RAG poisoning"]
+        M3["Mitigation: Even if injection succeeds,<br/>execution requires signed authorization"]
 
-        KC4["4. EXECUTION\nUnauthorized API calls,\nparameter tampering, replay"]
-        M4["Policy-gated signing\nSAE with nonce + expiry\nTOCTOU-safe atomic binding"]
+        KC4["4. EXECUTION<br/>Unauthorized API calls, replay"]
+        M4["Mitigation: Policy-gated signing,<br/>SAE with nonce + expiry, TOCTOU-safe"]
 
-        KC5["5. PRIVILEGE ESCALATION\nTool chaining, inherited permissions,\nservice account abuse"]
-        M5["Per-action least privilege\nJIT credential scoping\nNo standing agent permissions\nShort-lived certs (24h)"]
+        KC5["5. PRIVILEGE ESCALATION<br/>Tool chaining, inherited permissions"]
+        M5["Mitigation: Per-action least privilege,<br/>JIT scoping, short-lived certs (24h)"]
 
-        KC6["6. LATERAL MOVEMENT\nAgent-to-agent pivoting,\ncross-system traversal"]
-        M6["mTLS agent mesh\nSigned cross-agent SAEs\nEgress/ingress policy gates\nAgent allowlisting"]
+        KC6["6. LATERAL MOVEMENT<br/>Agent-to-agent pivoting"]
+        M6["Mitigation: mTLS agent mesh,<br/>signed cross-agent SAEs, allowlisting"]
 
-        KC7["7. IMPACT\nData exfiltration, financial fraud,\ninfra damage, reputational harm"]
-        M7["Immutable audit trail\nReal-time anomaly detection\nAutomatic agent quarantine\nForensic chain of custody"]
+        KC7["7. IMPACT<br/>Data exfil, financial fraud, infra damage"]
+        M7["Mitigation: Immutable audit trail,<br/>auto quarantine, forensic chain of custody"]
     end
 
     KC1 --- M1
@@ -423,20 +475,20 @@ The trust layer is not a standalone product. It emits structured events into the
 ```mermaid
 graph TB
     subgraph "Trust Layer Event Emission"
-        SAE_EVENTS["SAE Lifecycle Events\naction.authorized\naction.denied\naction.expired\naction.replayed (attempted)"]
-        PROV_EVENTS["Provenance Events\nmodel.registered\nmodel.hash_mismatch\nmodel.cert_revoked\nmodel.drift_detected"]
-        POLICY_EVENTS["Policy Events\npolicy.evaluated\npolicy.denied\npolicy.drift_detected\npolicy.bundle_updated"]
-        CERT_EVENTS["Certificate Events\ncert.issued\ncert.rotated\ncert.revoked\ncert.expiry_warning"]
+        SAE_EVENTS["SAE Lifecycle Events<br/>authorized · denied<br/>expired · replayed"]
+        PROV_EVENTS["Provenance Events<br/>registered · hash mismatch<br/>cert revoked · drift detected"]
+        POLICY_EVENTS["Policy Events<br/>evaluated · denied<br/>drift · bundle updated"]
+        CERT_EVENTS["Certificate Events<br/>issued · rotated<br/>revoked · expiry warning"]
     end
 
     subgraph "Integration Layer"
-        NORM["Event Normalization\nCEF · LEEF · OCSF\n(Open Cybersecurity\nSchema Framework)"]
+        NORM["Event Normalization<br/>CEF · LEEF · OCSF"]
     end
 
     subgraph "Security Operations"
-        SIEM["SIEM / XDR\n(Splunk · Sentinel\n· QRadar · Chronicle)"]
-        SOAR["SOAR\n(Phantom · Tines\n· Torq · Swimlane)"]
-        TIP["Threat Intel Platform\nAgent behavioral IOCs\nModel supply chain IOCs"]
+        SIEM["SIEM / XDR<br/>Splunk · Sentinel<br/>QRadar · Chronicle"]
+        SOAR["SOAR<br/>Phantom · Tines<br/>Torq · Swimlane"]
+        TIP["Threat Intel Platform<br/>Agent behavioral IOCs"]
     end
 
     SAE_EVENTS --> NORM
@@ -445,15 +497,15 @@ graph TB
     CERT_EVENTS --> NORM
 
     NORM --> SIEM
-    SIEM -->|"Correlation rules\ntrigger playbooks"| SOAR
-    SOAR -->|"Automated response:\nrevoke cert, quarantine\nagent, block model"| SAE_EVENTS
+    SIEM -->|"Correlation rules<br/>trigger playbooks"| SOAR
+    SOAR -->|"Auto response:<br/>revoke, quarantine, block"| SAE_EVENTS
     SIEM --> TIP
 
-    subgraph "Inbound Signals (consumed by Trust Layer)"
-        RISK["Risk Scoring Feeds\nUser risk score from UEBA\nEndpoint risk from XDR\nNetwork anomalies from NDR"]
+    subgraph "Inbound Signals"
+        RISK["Risk Scoring Feeds<br/>UEBA · XDR · NDR"]
     end
 
-    RISK -->|"Dynamic policy\ninput signals"| POLICY_EVENTS
+    RISK -->|"Dynamic policy<br/>input signals"| POLICY_EVENTS
 
     style NORM fill:#e76f51,color:#fff
     style SIEM fill:#264653,color:#fff
@@ -472,24 +524,24 @@ Deployment-time verification is insufficient. The trust layer performs continuou
 
 ```mermaid
 graph LR
-    subgraph "Attestation Checks (continuous cycle)"
+    subgraph "Attestation Checks (continuous)"
         direction TB
-        R1["MODEL INTEGRITY\nPeriodic hash of loaded weights\nvs. signed provenance cert.\nFrequency: every 60s + on each action"]
-        R2["POLICY STATE\nHash of active policy bundle\nvs. last signed version from\ncontrol plane.\nFrequency: every 30s"]
-        R3["BEHAVIORAL BASELINE\nAction frequency, API call patterns,\nresource access scope vs.\nestablished baseline.\nMethod: statistical + ML anomaly"]
-        R4["CERTIFICATE HEALTH\nOCSP check, expiry countdown,\nrevocation status.\nMethod: OCSP stapling on\nevery SAE issuance"]
-        R5["ENVIRONMENT INTEGRITY\nTPM-backed remote attestation\nof runtime host. Secure enclave\nverification (SGX · TDX · SEV-SNP)\nwhere available"]
+        R1["MODEL INTEGRITY<br/>Hash of loaded weights vs.<br/>signed provenance cert (every 60s)"]
+        R2["POLICY STATE<br/>Hash of active policy bundle<br/>vs. last signed version (every 30s)"]
+        R3["BEHAVIORAL BASELINE<br/>Action frequency and API patterns<br/>vs. established baseline"]
+        R4["CERTIFICATE HEALTH<br/>OCSP check, expiry, revocation<br/>on every SAE issuance"]
+        R5["ENVIRONMENT INTEGRITY<br/>TPM remote attestation,<br/>secure enclave verification"]
     end
 
-    R1 --> V{"Attestation\nVerdict"}
+    R1 --> V{"Attestation<br/>Verdict"}
     R2 --> V
     R3 --> V
     R4 --> V
     R5 --> V
 
-    V -->|"HEALTHY"| CONT["Continue\nRefresh attestation token\nAttach to next SAE"]
-    V -->|"DEGRADED"| DEG["Elevated scrutiny\nReduce trust score\nTighten policy thresholds\nAlert SOC (P3)"]
-    V -->|"FAILED"| BLOCK["Quarantine agent\nRevoke certificate\nKill signing capability\nSOC alert (P1)\nSOAR playbook: isolate"]
+    V -->|"HEALTHY"| CONT["Continue<br/>Refresh attestation token"]
+    V -->|"DEGRADED"| DEG["Elevated scrutiny<br/>Reduce trust score<br/>Alert SOC (P3)"]
+    V -->|"FAILED"| BLOCK["Quarantine agent<br/>Revoke certificate<br/>SOC alert (P1)"]
 
     style V fill:#e76f51,color:#fff
     style BLOCK fill:#9d0208,color:#fff
@@ -508,18 +560,18 @@ Not every AI event needs cryptographic immutability. The trust layer applies tie
 ```mermaid
 graph TB
     subgraph "Event Tiers"
-        TIER1["TIER 1 - Operational\nInference calls · debug traces\nperformance metrics\n→ Standard log pipeline"]
-        TIER2["TIER 2 - Security\nPolicy denials · anomaly detections\nguardrail triggers · access denials\n→ SIEM + SOC triage"]
-        TIER3["TIER 3 - Trust-Critical\nSigned action executions · model deployments\npolicy changes · cross-org interactions\ncert issuance/revocation\n→ Cryptographic anchoring"]
+        TIER1["TIER 1 - Operational<br/>Inference calls, debug traces,<br/>performance metrics"]
+        TIER2["TIER 2 - Security<br/>Policy denials, anomaly detections,<br/>guardrail triggers, access denials"]
+        TIER3["TIER 3 - Trust-Critical<br/>Signed action executions,<br/>model deployments, policy changes"]
     end
 
     TIER1 -->|"Syslog / OCSF"| SIEM["SIEM / Log Store"]
     TIER2 -->|"OCSF + enrichment"| SIEM
-    TIER3 -->|"Signed event + Merkle proof"| MERKLE["Merkle Tree\n(append-only · hash-chained)"]
+    TIER3 -->|"Signed event +<br/>Merkle proof"| MERKLE["Merkle Tree<br/>(append-only · hash-chained)"]
 
-    MERKLE -->|"Root hash published\nevery N minutes"| TLOG["Transparency Log\n(independently verifiable\nby any party)"]
-    MERKLE -->|"On-demand\nproof export"| AUDIT["Regulator / Auditor\nPackage"]
-    MERKLE -->|"Forensic query\nby SAE chain"| IR["Incident Response\nEvidence Bundle"]
+    MERKLE -->|"Root hash published<br/>every N minutes"| TLOG["Transparency Log<br/>(independently verifiable)"]
+    MERKLE -->|"On-demand<br/>proof export"| AUDIT["Regulator / Auditor<br/>Package"]
+    MERKLE -->|"Forensic query<br/>by SAE chain"| IR["Incident Response<br/>Evidence Bundle"]
 
     style TIER3 fill:#e76f51,color:#fff
     style MERKLE fill:#264653,color:#fff
@@ -576,11 +628,11 @@ Without the trust layer: the SOC reconstructs this from scattered, mutable logs 
 graph TB
     subgraph "Enterprise AI Security Stack"
         direction TB
-        L5["LAYER 5 - AI Application Security\nPrompt filtering · output guardrails · content moderation\nDLP for AI outputs · PII/PHI scanning\n(AI security platforms)"]
-        L4["LAYER 4 - Agent Governance\nRBAC/ABAC for agents · tool permissions\nrate limiting · human-in-the-loop gates\n(AI platforms + IAM)"]
-        L3["LAYER 3 - Cryptographic Trust\nAction signing · policy-gated execution\nmodel provenance · runtime attestation\nagent PKI · immutable audit"]
-        L2["LAYER 2 - Platform Security\nContainer security · secrets management\nmicrosegmentation · API gateway · CWPP\n(CNAPP platforms)"]
-        L1["LAYER 1 - Infrastructure Security\nCSPM · XDR · NDR · endpoint protection\n(Security operations platforms)"]
+        L5["LAYER 5 - AI Application Security<br/>Prompt filtering, output guardrails,<br/>content moderation, DLP, PII scanning"]
+        L4["LAYER 4 - Agent Governance<br/>RBAC/ABAC, tool permissions,<br/>rate limiting, human-in-the-loop gates"]
+        L3["LAYER 3 - Cryptographic Trust<br/>Action signing, policy-gated execution,<br/>model provenance, runtime attestation"]
+        L2["LAYER 2 - Platform Security<br/>Container security, secrets management,<br/>microsegmentation, API gateway"]
+        L1["LAYER 1 - Infrastructure Security<br/>CSPM, XDR, NDR, endpoint protection"]
     end
 
     L5 --> L4 --> L3 --> L2 --> L1
@@ -588,7 +640,7 @@ graph TB
     L5 -.->|"Content decisions"| L3
     L4 -.->|"Access decisions"| L3
     L3 -.->|"Cryptographic enforcement"| L2
-    L1 -.->|"Risk signals (XDR/NDR)"| L3
+    L1 -.->|"Risk signals"| L3
 
     style L3 fill:#e76f51,color:#fff
 ```
