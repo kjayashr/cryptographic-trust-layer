@@ -61,9 +61,9 @@ We're building the exact same thing, but for AI agent actions instead of credit 
 Nine attack vectors specific to agentic AI systems, mapped against what existing controls cover and where the gaps are.
 
 ```mermaid
-graph TB
+graph LR
     subgraph "AI Agent Attack Chain"
-        direction TB
+        direction LR
         T1["T1 - Model Supply Chain<br/>Poisoned weights, backdoored adapters,<br/>typosquatted repos, training data attacks"]
         T2["T2 - Input Manipulation<br/>Prompt injection, RAG poisoning,<br/>jailbreaks, context manipulation"]
         T3["T3 - Identity and Authorization<br/>Agent impersonation, credential theft,<br/>privilege escalation via tool chaining"]
