@@ -16,13 +16,13 @@ Current AI security tools (guardrails, prompt filters, logging) are like putting
 
 **What We're Building:**
 
-A security layer that works like a **digital notary for every AI action**. Before any AI agent can do anything consequential, it must:
+A cryptographic enforcement layer that applies the same trust guarantees we require for financial transactions and code signing to every AI agent action. Before any agent can execute a consequential action, three things must happen:
 
-1. **Prove its identity**: like showing a badge before entering a secure building
-2. **Get its action approved against policy**: like getting a manager's signature before spending company money
-3. **Receive a cryptographic receipt**: a tamper-proof, timestamped record that can never be altered or forged
+1. **Identity verification** -- the agent authenticates via short-lived X.509 certificate, proving exactly which agent, running which model version, is requesting execution
+2. **Policy-gated authorization** -- the action is evaluated against signed, versioned policy in real time. No standing privileges. Every action is individually adjudicated
+3. **Cryptographic proof of authorization** -- the trust layer issues a signed, timestamped, non-repudiable receipt (Signed Action Envelope) binding identity, policy, and action into a single verifiable artifact
 
-If the AI can't produce this signed receipt, the action simply doesn't execute. Not "flagged for review." Not "logged for later." **Blocked.**
+No valid signature, no execution. Not flagged. Not logged for later. **Blocked.**
 
 ```mermaid
 graph LR
@@ -640,29 +640,6 @@ Layer 3 does not replace anything above or below it. It makes the decisions at e
 | **PCI DSS v4.0** | Cardholder data protection | DLP integration via policy engine, signed actions on payment APIs |
 | **FedRAMP / FISMA** | Continuous monitoring, tamper-evident logging | Runtime attestation, Merkle-anchored audit |
 | **ISO 27001:2022** | Information security management | Agent PKI, access control, audit trail |
-
----
-
-## 17. Market Timing
-
-```mermaid
-timeline
-    title Convergence Window
-    2023 : AI generates text - blast radius is low
-         : AI security = guardrails and prompt filtering
-         : No regulatory framework for AI actions
-    2024 : Agentic AI enters production
-         : EU AI Act finalized - DORA effective
-         : First enterprise AI agent incidents reported
-         : Security teams realize: logs are not proof
-    2025 : Multi-agent systems cross organizational boundaries
-         : AI audit requirements become active
-         : Cyber insurance begins requiring AI action provenance
-         : CISOs shift budget from dashboards to guarantees
-    2026+ : AI systems held to the same standard as financial systems
-          : Cryptographic trust for AI becomes table stakes
-          : The trust layer becomes invisible infrastructure
-```
 
 ---
 
