@@ -58,7 +58,7 @@ We're building the exact same thing, but for AI agent actions instead of credit 
 
 ## 2. Threat Model: AI Agent Attack Surface
 
-Six attack vectors specific to agentic AI systems, mapped against what existing controls cover and where the gaps are.
+Nine attack vectors specific to agentic AI systems, mapped against what existing controls cover and where the gaps are.
 
 ```mermaid
 graph TB
@@ -68,30 +68,39 @@ graph TB
         T2["T2 - Input Manipulation<br/>Prompt injection, RAG poisoning,<br/>jailbreaks, context manipulation"]
         T3["T3 - Identity and Authorization<br/>Agent impersonation, credential theft,<br/>privilege escalation via tool chaining"]
         T4["T4 - Action Execution<br/>Unauthorized API calls, replay attacks,<br/>TOCTOU between policy and execution"]
-        T5["T5 - Observability<br/>Log tampering, silent policy drift,<br/>broken causal chains across workflows"]
-        T6["T6 - Cross-Boundary<br/>Rogue agent-to-agent traffic,<br/>unverified inter-org interactions"]
+        T5["T5 - Output Integrity<br/>Insecure outputs, malicious URLs,<br/>code injection via generated content"]
+        T6["T6 - Data Exfiltration<br/>Sensitive data leaks via model responses,<br/>training data extraction, PII exposure"]
+        T7["T7 - Confabulation<br/>Hallucinated outputs presented as fact,<br/>fabricated citations, false attestations"]
+        T8["T8 - Observability<br/>Log tampering, silent policy drift,<br/>broken causal chains across workflows"]
+        T9["T9 - Cross-Boundary<br/>Rogue agent-to-agent traffic,<br/>unverified inter-org interactions"]
     end
 
-    T1 --> T2 --> T3 --> T4 --> T5 --> T6
+    T1 --> T2 --> T3 --> T4 --> T5 --> T6 --> T7 --> T8 --> T9
 
     style T1 fill:#03071e,color:#fff
     style T2 fill:#370617,color:#fff
     style T3 fill:#6a040f,color:#fff
     style T4 fill:#9d0208,color:#fff
     style T5 fill:#d00000,color:#fff
-    style T6 fill:#e85d04,color:#fff
+    style T6 fill:#dc2f02,color:#fff
+    style T7 fill:#e85d04,color:#fff
+    style T8 fill:#f48c06,color:#fff
+    style T9 fill:#faa307,color:#000
 ```
 
-| Vector | Existing Coverage | Gap |
+| Vector | Existing Coverage | Trust Layer Role |
 |---|---|---|
-| T1 - Supply Chain | SCA tools scan code dependencies, not model artifacts | No model provenance, no AI-SBOM, no runtime hash verification |
-| T2 - Input Manipulation | Guardrails, prompt filters | Addressed at input - but if injection succeeds, nothing prevents execution |
-| T3 - Identity | IAM, RBAC | Agents inherit service account privileges; no per-agent, per-action identity |
-| T4 - Execution | API gateways, rate limits | No cryptographic binding between policy decision and action execution |
-| T5 - Observability | SIEM, logging | Logs are mutable; no tamper-evident chain of custody for AI actions |
-| T6 - Cross-Boundary | mTLS at network layer | No application-layer agent identity, no signed intent verification |
+| T1 - Supply Chain | SCA tools scan code dependencies; AI security platforms add model scanning and deserialization checks | Trust layer adds runtime hash verification, AI-SBOM provenance binding, and SLSA attestation -- proving the model in production matches the model that was approved |
+| T2 - Input Manipulation | Guardrails, prompt filters, content classification | Addressed at input by runtime security platforms. Trust layer hardens the boundary: even if injection succeeds, execution requires signed authorization |
+| T3 - Identity | IAM, RBAC, posture management | Agents inherit service account privileges. Trust layer enforces per-agent, per-action cryptographic identity via short-lived X.509 certificates |
+| T4 - Execution | API gateways, rate limits, agent policy enforcement | No cryptographic binding between policy decision and action execution. Trust layer closes this with signed action envelopes and TOCTOU-safe enforcement |
+| T5 - Output Integrity | AI runtime security platforms scan outputs for malicious content, URLs, and code injection | Trust layer adds signed provenance: the output can be traced back to the exact agent, model version, and policy that produced it |
+| T6 - Data Exfiltration | DLP, content filtering, topic guardrails in AI agent security platforms | Trust layer adds policy-gated enforcement on data-touching actions: outbound data transfers require signed authorization matching data classification policy |
+| T7 - Confabulation | Hallucination detection via grounding checks against knowledge sources | Outside the trust layer's scope. This is a model fidelity problem best addressed at the application and runtime security layer |
+| T8 - Observability | SIEM, logging, continuous monitoring platforms | Logs are mutable. Trust layer provides tamper-evident, Merkle-anchored chain of custody for all AI actions |
+| T9 - Cross-Boundary | mTLS at network layer | No application-layer agent identity. Trust layer adds signed intent verification and cross-agent SAE chains |
 
-The trust layer closes T1, T3, T4, T5, and T6. It hardens the boundary at T2 by ensuring that even a successful prompt injection cannot bypass cryptographic execution gates.
+The trust layer closes T1, T3, T4, T8, and T9 directly. It strengthens T2, T5, and T6 by adding cryptographic enforcement beneath existing runtime security controls. T7 (confabulation) is correctly addressed at the application layer and is out of scope for cryptographic enforcement.
 
 ---
 
@@ -404,8 +413,11 @@ graph TB
         KC6["6. LATERAL MOVEMENT<br/>Agent-to-agent pivoting"]
         M6["Mitigation: mTLS agent mesh,<br/>signed cross-agent SAEs, allowlisting"]
 
-        KC7["7. IMPACT<br/>Data exfil, financial fraud, infra damage"]
-        M7["Mitigation: Immutable audit trail,<br/>auto quarantine, forensic chain of custody"]
+        KC7["7. OUTPUT MANIPULATION<br/>Insecure outputs, malicious content,<br/>data exfiltration via responses"]
+        M7["Mitigation: Runtime security platforms<br/>scan outputs. Trust layer adds signed<br/>provenance binding to every response"]
+
+        KC8["8. IMPACT<br/>Data exfil, financial fraud, infra damage"]
+        M8["Mitigation: Immutable audit trail,<br/>auto quarantine, forensic chain of custody"]
     end
 
     KC1 --- M1
@@ -415,6 +427,7 @@ graph TB
     KC5 --- M5
     KC6 --- M6
     KC7 --- M7
+    KC8 --- M8
 
     style KC1 fill:#264653,color:#fff
     style KC2 fill:#264653,color:#fff
@@ -423,15 +436,17 @@ graph TB
     style KC5 fill:#264653,color:#fff
     style KC6 fill:#264653,color:#fff
     style KC7 fill:#264653,color:#fff
+    style KC8 fill:#264653,color:#fff
     style M2 fill:#e76f51,color:#fff
     style M3 fill:#e76f51,color:#fff
     style M4 fill:#e76f51,color:#fff
     style M5 fill:#e76f51,color:#fff
     style M6 fill:#e76f51,color:#fff
-    style M7 fill:#e76f51,color:#fff
+    style M7 fill:#e9c46a,color:#000
+    style M8 fill:#e76f51,color:#fff
 ```
 
-Existing AI security operates primarily at Stage 3 (input filtering). The trust layer covers Stages 2, 4, 5, 6, and 7 - where autonomous execution creates actual damage.
+AI security platforms increasingly address Stages 2, 3, and 7 with model scanning, input filtering, and output guardrails. The trust layer covers Stages 2, 4, 5, 6, and 8 -- the execution and post-execution stages where autonomous action creates actual damage. At Stage 7, the trust layer complements runtime output scanning by binding provenance to every output.
 
 ---
 
@@ -565,8 +580,8 @@ Without the trust layer: the SOC reconstructs this from scattered, mutable logs 
 graph TB
     subgraph "Enterprise AI Security Stack"
         direction TB
-        L5["LAYER 5 - AI Application Security<br/>Prompt filtering, output guardrails,<br/>content moderation, DLP, PII scanning"]
-        L4["LAYER 4 - Agent Governance<br/>RBAC/ABAC, tool permissions,<br/>rate limiting, human-in-the-loop gates"]
+        L5["LAYER 5 - AI Application & Runtime Security<br/>Model scanning, prompt filtering, output guardrails,<br/>hallucination detection, DLP, agent security, red teaming"]
+        L4["LAYER 4 - Agent Governance<br/>RBAC/ABAC, posture management, tool permissions,<br/>rate limiting, human-in-the-loop gates"]
         L3["LAYER 3 - Cryptographic Trust<br/>Action signing, policy-gated execution,<br/>model provenance, runtime attestation"]
         L2["LAYER 2 - Platform Security<br/>Container security, secrets management,<br/>microsegmentation, API gateway"]
         L1["LAYER 1 - Infrastructure Security<br/>CSPM, XDR, NDR, endpoint protection"]
@@ -582,7 +597,7 @@ graph TB
     style L3 fill:#e76f51,color:#fff
 ```
 
-Layer 3 does not replace anything above or below it. It makes the decisions at every other layer **provable**. Layer 5 detects a risky prompt - Layer 3 proves the action was blocked. Layer 4 decides an agent lacks permission - Layer 3 produces a signed denial. Layer 1 detects an endpoint anomaly - Layer 3 consumes that signal to tighten policy thresholds.
+Layer 3 does not replace anything above or below it. It makes the decisions at every other layer **provable**. Layer 5 -- where AI security platforms provide model scanning, runtime protection, agent guardrails, and red teaming -- makes content-level and behavioral decisions. Layer 3 provides the cryptographic substrate that binds those decisions to verifiable proof. Layer 5 detects a risky prompt -- Layer 3 proves the action was blocked. Layer 4 decides an agent lacks permission -- Layer 3 produces a signed denial. Layer 1 detects an endpoint anomaly -- Layer 3 consumes that signal to tighten policy thresholds. The trust layer is the enforcement backbone that the rest of the stack depends on for non-repudiation.
 
 ---
 
